@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	// "os/exec"
+	"os/exec"
 )
 
 const (
@@ -37,16 +37,16 @@ func printHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// cmd := exec.Command("lp", "-d", PRINTER_NAME, "-n", fmt.Sprintf("%d", &request.Quantity), "temp/label.png")
-	// err := cmd.Run()
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	json.NewEncoder(w).Encode(ErrorResponse{
-	// 		Ok:    false,
-	// 		Error: err.Error(),
-	// 	})
-	// 	return
-	// }
+	cmd := exec.Command("lp", "-d", PRINTER_NAME, "-n", fmt.Sprintf("%d", &request.Quantity), "temp/label.png")
+	err := cmd.Run()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{
+			Ok:    false,
+			Error: err.Error(),
+		})
+		return
+	}
 
 	json.NewEncoder(w).Encode(SuccessResponse{
 		Ok:     true,
