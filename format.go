@@ -28,9 +28,12 @@ func formatLabel(itemId, serial, name string) error {
 	draw.Draw(canvas, canvas.Bounds(), image.White, image.Point{}, draw.Src)
 
 	// Add the text
-	addTextWithFont(canvas, MARGINS+30+25, MARGINS, "Monash Automation", 30, false)
-	addTextWithFont(canvas, MARGINS, HEIGHT/2-50, serial, 100, true)
-	addTextWithFont(canvas, MARGINS, HEIGHT-MARGINS-40, name, 40, false)
+	normalFont := "fonts/roboto-font/RobotoRegular.ttf"
+	boldFont  := "fonts/roboto-font/RobotoBlack-Powx.ttf"
+
+	addTextWithFont(canvas, MARGINS+30+25, MARGINS, "Monash Automation", 30, normalFont, false)
+	addTextWithFont(canvas, MARGINS, HEIGHT/2-50, serial, 100, boldFont, true)
+	addTextWithFont(canvas, MARGINS, HEIGHT-MARGINS-40, name, 40, normalFont, false)
 
 	// Add the MA logo
 	if err := overlayImage(canvas, "assets/monash_automation_logo.png", MARGINS, MARGINS, 40, 40); err != nil {
@@ -82,16 +85,26 @@ func overlayImage(canvas *image.RGBA, imagePath string, x, y, size_x, size_y int
 	return nil
 }
 
-func addTextWithFont(img *image.RGBA, x, y int, text string, fontSize float64, bold bool) {
+func addTextWithFont(img *image.RGBA, x, y int, text string, fontSize float64, fontPath string, bold bool) {
 	col := color.RGBA{0, 0, 0, 255}
-
+	
 	var fontData []byte
-	if bold {
-		fontData = gomonobold.TTF
-	} else {
-		fontData = goregular.TTF
+	if fontPath != "" {
+		data, err := os.ReadFile(fontPath)
+		if err == nil {
+			fontData = data
+		}
 	}
-
+	
+	// Fallback to embedded fonts
+	if fontData == nil {
+		if bold {
+			fontData = gomonobold.TTF
+		} else {
+			fontData = goregular.TTF
+		}
+	}
+	
 	f, _ := truetype.Parse(fontData)
 	c := freetype.NewContext()
 	c.SetDPI(72)
