@@ -4,68 +4,102 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"image/png"
 	"image/jpeg"
 	"os"
 
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
-	"golang.org/x/image/math/fixed"
+	"github.com/golang/freetype"
+	"github.com/golang/freetype/truetype"
+	"github.com/nfnt/resize"
+	"github.com/skip2/go-qrcode"
+	"golang.org/x/image/font/gofont/gomonobold"
+	"golang.org/x/image/font/gofont/goregular"
 )
 
-func formatLabel() {
-	// Create blank label with specified dimensions
-	width := 991
-	height := 306
-	canvas := image.NewRGBA(image.Rect(0, 0, width, height))
-	
-	// Fill with white background
-	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
-	
-	// Overlay an image at specific coordinates
-	overlayImage(canvas, "assets/monash_automation_logo.png", 100, 150)
-	
-	// Add text at specific coordinates
-	addText(canvas, 100, 200, "Hello, World!", color.RGBA{0, 0, 0, 255})
-	
+const (
+	WIDTH      = 991
+	HEIGHT     = 306
+	MARGINS    = 30
+	QR_CODE_LW = 241
+)
+
+func formatLabel(itemId, serial, name string) error {
+	// Create blank white label
+	canvas := image.NewRGBA(image.Rect(0, 0, WIDTH, HEIGHT))
+	draw.Draw(canvas, canvas.Bounds(), image.White, image.Point{}, draw.Src)
+
+	// Add the text
+	addTextWithFont(canvas, MARGINS+30+25, MARGINS, "Monash Automation", 30, false)
+	addTextWithFont(canvas, MARGINS, HEIGHT/2-50, serial, 100, true)
+	addTextWithFont(canvas, MARGINS, HEIGHT-MARGINS-40, name, 40, false)
+
+	// Add the MA logo
+	if err := overlayImage(canvas, "assets/monash_automation_logo.png", MARGINS, MARGINS, 40, 40); err != nil {
+		return err
+	}
+
+	createQR(canvas, itemId, QR_CODE_LW)
+
 	// Save the result
 	outFile, err := os.Create("temp/label.jpg")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer outFile.Close()
-	
-	jpeg.Encode(outFile, canvas, &jpeg.Options{Quality: 95})
+
+	return jpeg.Encode(outFile, canvas, &jpeg.Options{Quality: 95})
 }
 
-func overlayImage(canvas *image.RGBA, imagePath string, x, y int) error {
+func createQR(canvas *image.RGBA, itemId string, length int) error {
+	qr, err := qrcode.New(itemId, qrcode.High)
+	if err != nil {
+		return err
+	}
+
+	qr.DisableBorder = true
+	qrImg := qr.Image(length)
+
+	// Overlay on canvas
+	offset := image.Pt(WIDTH-length-MARGINS, MARGINS)
+	draw.Draw(canvas, qrImg.Bounds().Add(offset), qrImg, image.Point{}, draw.Over)
+	return nil
+}
+
+func overlayImage(canvas *image.RGBA, imagePath string, x, y, size_x, size_y int) error {
 	file, err := os.Open(imagePath)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	
-	img, err := png.Decode(file)
+
+	img, _, err := image.Decode(file)
+	img = resize.Resize(uint(size_x), uint(size_y), img, resize.Lanczos3)
 	if err != nil {
 		return err
 	}
-	
+
 	offset := image.Pt(x, y)
 	draw.Draw(canvas, img.Bounds().Add(offset), img, image.Point{}, draw.Over)
 	return nil
 }
 
-func addText(img *image.RGBA, x, y int, label string, col color.Color) {
-	point := fixed.Point26_6{
-		X: fixed.Int26_6(x * 64),
-		Y: fixed.Int26_6(y * 64),
+func addTextWithFont(img *image.RGBA, x, y int, text string, fontSize float64, bold bool) {
+	col := color.RGBA{0, 0, 0, 255}
+
+	var fontData []byte
+	if bold {
+		fontData = gomonobold.TTF
+	} else {
+		fontData = goregular.TTF
 	}
-	
-	d := &font.Drawer{
-		Dst:  img,
-		Src:  image.NewUniform(col),
-		Face: basicfont.Face7x13,
-		Dot:  point,
-	}
-	d.DrawString(label)
+
+	f, _ := truetype.Parse(fontData)
+	c := freetype.NewContext()
+	c.SetDPI(72)
+	c.SetFont(f)
+	c.SetFontSize(fontSize)
+	c.SetClip(img.Bounds())
+	c.SetDst(img)
+	c.SetSrc(image.NewUniform(col))
+	pt := freetype.Pt(x, y+int(c.PointToFixed(fontSize)>>6))
+	c.DrawString(text, pt)
 }

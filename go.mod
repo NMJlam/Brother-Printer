@@ -3,12 +3,15 @@ module Label-Printer
 go 1.24.3
 
 require (
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/google/uuid v1.6.0
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+	golang.org/x/image v0.31.0
+	golang.org/x/text v0.29.0
 )
 
 require (
-	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
+	github.com/flopp/go-findfont v0.1.0 // indirect
 	github.com/google/gousb v1.1.3 // indirect
-	golang.org/x/image v0.31.0 // indirect
 )
