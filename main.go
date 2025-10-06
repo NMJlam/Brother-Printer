@@ -37,7 +37,7 @@ func printHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	cmd := exec.Command("lp", "-d", PRINTER_NAME, "-n", fmt.Sprintf("%d", &request.Quantity), "temp/label.png")
+	cmd := exec.Command("lp", "-d", PRINTER_NAME, "-n", fmt.Sprintf("%d", request.Quantity), "temp/label.jpg")
 	err := cmd.Run()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
