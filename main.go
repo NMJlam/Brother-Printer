@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"encoding/json"
-	"github.com/skip2/go-qrcode"
 )
 
 func printHandler(w http.ResponseWriter, r *http.Request) {
@@ -17,11 +16,9 @@ func printHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	// Valdate the json
-	if validJson(&request, w) {
+	if !validJson(&request, w) {
 		return
 	}
-
-		
 
 	json.NewEncoder(w).Encode(SuccessResponse{
 		Ok:    true,
