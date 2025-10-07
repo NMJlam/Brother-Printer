@@ -4,7 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"image/jpeg"
+	"image/png"
 	"os"
 
 	"github.com/golang/freetype"
@@ -43,13 +43,13 @@ func formatLabel(itemId, serial, name string) error {
 	createQR(canvas, itemId, QR_CODE_LW)
 
 	// Save the result
-	outFile, err := os.Create("temp/label.jpg")
+	outFile, err := os.Create("temp/label.png")
 	if err != nil {
 		return err
 	}
 	defer outFile.Close()
 
-	return jpeg.Encode(outFile, canvas, &jpeg.Options{Quality: 95})
+	return png.Encode(outFile, canvas)
 }
 
 func createQR(canvas *image.RGBA, itemId string, length int) error {
